@@ -1,0 +1,489 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enhanced Lineage Agent - AWS Infrastructure'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues: ['dev', 'test', 'prod']
+    Description: 'Deployment environment'
+  
+  ProjectName:
+    Type: String
+    Default: 'enhanced-lineage-agent'
+    Description: 'Project name for resource naming'
+  
+  BedrockModelId:
+    Type: String
+    Default: 'anthropic.claude-3-5-sonnet-20241022-v2:0'
+    Description: 'Bedrock model ID for the context-aware agent'
+  
+  AlertEmail:
+    Type: String
+    Description: 'Email address for alerts'
+    Default: 'admin@example.com'
+
+Resources:
+  # DynamoDB Tables
+  JobExecutionMappingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-job-execution-mappings-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: context_id
+          AttributeType: S
+        - AttributeName: job_name
+          AttributeType: S
+        - AttributeName: mapping_timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: context_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: job-name-index
+          KeySchema:
+            - AttributeName: job_name
+              KeyType: HASH
+            - AttributeName: mapping_timestamp
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ExecutionContextTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-execution-contexts-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: context_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: context_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # S3 Bucket for Lineage Data
+  LineageDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-lineage-data-${Environment}-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+          - Id: ArchiveOldData
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 30
+                StorageClass: STANDARD_IA
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # SNS Topic for Alerts
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-alerts-${Environment}'
+      DisplayName: 'Enhanced Lineage Agent Alerts'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  AlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref AlertTopic
+      Endpoint: !Ref AlertEmail
+
+  # IAM Roles and Policies
+  LineageAgentExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-execution-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - glue.amazonaws.com
+                - sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LineageAgentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # DynamoDB permissions
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt JobExecutionMappingTable.Arn
+                  - !GetAtt ExecutionContextTable.Arn
+                  - !Sub '${JobExecutionMappingTable.Arn}/index/*'
+                  - !Sub '${ExecutionContextTable.Arn}/index/*'
+              
+              # S3 permissions
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt LineageDataBucket.Arn
+                  - !Sub '${LineageDataBucket.Arn}/*'
+              
+              # CloudWatch Logs permissions
+              - Effect: Allow
+                Action:
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:FilterLogEvents
+                  - logs:GetLogEvents
+                Resource: '*'
+              
+              # CloudWatch Metrics permissions
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+                  - cloudwatch:PutDashboard
+                  - cloudwatch:PutMetricAlarm
+                Resource: '*'
+              
+              # SNS permissions
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref AlertTopic
+              
+              # Glue permissions
+              - Effect: Allow
+                Action:
+                  - glue:GetJob
+                  - glue:GetJobRun
+                  - glue:GetJobRuns
+                  - glue:ListJobs
+                Resource: '*'
+              
+              # Bedrock permissions
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: !Sub 'arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # Lambda Function for Context-Aware Agent
+  ContextAwareAgentFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-context-aware-agent-${Environment}'
+      Runtime: python3.9
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LineageAgentExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          from datetime import datetime
+          
+          def lambda_handler(event, context):
+              """
+              Lambda handler for context-aware agent
+              """
+              try:
+                  # This is a placeholder - actual implementation would be deployed separately
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': 'Context-aware agent function deployed successfully',
+                          'timestamp': datetime.now().isoformat(),
+                          'event': event
+                      })
+                  }
+              except Exception as e:
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps({
+                          'error': str(e),
+                          'timestamp': datetime.now().isoformat()
+                      })
+                  }
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          JOB_MAPPING_TABLE: !Ref JobExecutionMappingTable
+          CONTEXT_TABLE: !Ref ExecutionContextTable
+          LINEAGE_BUCKET: !Ref LineageDataBucket
+          ALERT_TOPIC_ARN: !Ref AlertTopic
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+      Timeout: 300
+      MemorySize: 512
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+  # CloudWatch Log Group for Lambda
+  ContextAwareAgentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ContextAwareAgentFunction}'
+      RetentionInDays: 14
+
+  # EventBridge Rule for Scheduled Monitoring
+  MonitoringScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-monitoring-schedule-${Environment}'
+      Description: 'Scheduled monitoring for Enhanced Lineage Agent'
+      ScheduleExpression: 'rate(5 minutes)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ContextAwareAgentFunction.Arn
+          Id: 'MonitoringTarget'
+          Input: !Sub |
+            {
+              "action": "monitoring_check",
+              "environment": "${Environment}",
+              "timestamp": "scheduled"
+            }
+
+  # Permission for EventBridge to invoke Lambda
+  MonitoringSchedulePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ContextAwareAgentFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MonitoringScheduleRule.Arn
+
+  # CloudWatch Dashboard
+  LineageAgentDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-dashboard-${Environment}'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["EnhancedLineageAgent", "ContextIdentificationSuccess", "Status", "Success"],
+                  [".", ".", ".", "Failed"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Context Identification Success Rate"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["EnhancedLineageAgent", "JobIdValidationConfidence"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Job ID Validation Confidence"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["EnhancedLineageAgent", "LineageMergeStatus", "Status", "success"],
+                  [".", ".", ".", "warning"],
+                  [".", ".", ".", "blocked"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Lineage Merge Status"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${ContextAwareAgentFunction}"],
+                  [".", "Errors", ".", "."],
+                  [".", "Invocations", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Metrics"
+              }
+            }
+          ]
+        }
+
+  # CloudWatch Alarms
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-high-error-rate-${Environment}'
+      AlarmDescription: 'High error rate detected in Enhanced Lineage Agent'
+      MetricName: ErrorOccurrence
+      Namespace: EnhancedLineageAgent
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: notBreaching
+
+  LowContextIdentificationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-low-context-identification-${Environment}'
+      AlarmDescription: 'Low context identification success rate'
+      MetricName: ContextIdentificationSuccess
+      Namespace: EnhancedLineageAgent
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 0.8
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+      TreatMissingData: breaching
+
+  LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-lambda-errors-${Environment}'
+      AlarmDescription: 'Lambda function errors'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ContextAwareAgentFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertTopic
+
+Outputs:
+  JobExecutionMappingTableName:
+    Description: 'DynamoDB table name for job execution mappings'
+    Value: !Ref JobExecutionMappingTable
+    Export:
+      Name: !Sub '${AWS::StackName}-JobExecutionMappingTable'
+
+  ExecutionContextTableName:
+    Description: 'DynamoDB table name for execution contexts'
+    Value: !Ref ExecutionContextTable
+    Export:
+      Name: !Sub '${AWS::StackName}-ExecutionContextTable'
+
+  LineageDataBucketName:
+    Description: 'S3 bucket name for lineage data'
+    Value: !Ref LineageDataBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-LineageDataBucket'
+
+  AlertTopicArn:
+    Description: 'SNS topic ARN for alerts'
+    Value: !Ref AlertTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-AlertTopic'
+
+  ExecutionRoleArn:
+    Description: 'IAM role ARN for lineage agent execution'
+    Value: !GetAtt LineageAgentExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ExecutionRole'
+
+  ContextAwareAgentFunctionArn:
+    Description: 'Lambda function ARN for context-aware agent'
+    Value: !GetAtt ContextAwareAgentFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ContextAwareAgentFunction'
+
+  DashboardUrl:
+    Description: 'CloudWatch dashboard URL'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-dashboard-${Environment}'
