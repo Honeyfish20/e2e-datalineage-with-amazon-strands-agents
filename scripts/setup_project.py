@@ -23,10 +23,13 @@ def create_directory_structure():
     logger.info("Creating project directory structure...")
     
     directories = [
-        'enhanced_lineage_agent/agents',
-        'enhanced_lineage_agent/models',
-        'enhanced_lineage_agent/tools',
-        'enhanced_lineage_agent/utils',
+        'agents',
+        'models',
+        'tools',
+        'utils',
+        'integrations',
+        'deployment',
+        'monitoring',
         'config',
         'examples',
         'tests',
@@ -42,11 +45,14 @@ def create_directory_structure():
     
     # 创建__init__.py文件
     init_files = [
-        'enhanced_lineage_agent/__init__.py',
-        'enhanced_lineage_agent/agents/__init__.py',
-        'enhanced_lineage_agent/models/__init__.py',
-        'enhanced_lineage_agent/tools/__init__.py',
-        'enhanced_lineage_agent/utils/__init__.py'
+        '__init__.py',
+        'agents/__init__.py',
+        'models/__init__.py',
+        'tools/__init__.py',
+        'utils/__init__.py',
+        'integrations/__init__.py',
+        'deployment/__init__.py',
+        'monitoring/__init__.py'
     ]
     
     for init_file in init_files:
@@ -248,11 +254,13 @@ def print_setup_summary():
     print("   - python examples/basic_usage.py")
     print("   - python examples/sagemaker_notebook_example.py")
     print("\nProject structure:")
-    print("├── enhanced_lineage_agent/    # Core package")
-    print("│   ├── agents/               # Agent implementations")
-    print("│   ├── models/               # Data models")
-    print("│   ├── tools/                # Tools and utilities")
-    print("│   └── utils/                # Utility functions")
+    print("├── agents/                  # Agent implementations")
+    print("├── models/                  # Data models")
+    print("├── tools/                   # Tools and utilities")
+    print("├── utils/                   # Utility functions")
+    print("├── integrations/            # System integrations")
+    print("├── deployment/              # Deployment configurations")
+    print("├── monitoring/              # Monitoring components")
     print("├── config/                   # Configuration files")
     print("├── examples/                 # Usage examples")
     print("├── tests/                    # Test files")

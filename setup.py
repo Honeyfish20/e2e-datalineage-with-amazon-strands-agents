@@ -18,7 +18,7 @@ setup(
     description="基于Amazon Strands Agents的智能血缘提取系统",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/example/enhanced-lineage-agent",
+    url="https://github.com/Honeyfish20/e2e-datalineage-with-amazon-strands-agents",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -46,9 +46,9 @@ setup(
             "ipython>=8.0.0",
         ],
     },
-    entry_points={
-        "console_scripts": [
-            "enhanced-lineage-agent=enhanced_lineage_agent.cli:main",
-        ],
-    },
+    # entry_points={
+    #     "console_scripts": [
+    #         "enhanced-lineage-agent=cli:main",
+    #     ],
+    # },
 )

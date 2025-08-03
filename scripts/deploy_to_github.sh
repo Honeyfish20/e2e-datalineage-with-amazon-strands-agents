@@ -59,10 +59,10 @@ check_required_files() {
         "setup.py"
         ".gitignore"
         ".env.sample"
-        "enhanced_lineage_agent/agents/context_aware_agent.py"
-        "enhanced_lineage_agent/models/execution_context.py"
-        "enhanced_lineage_agent/tools/lineage_validator.py"
-        "enhanced_lineage_agent/utils/config_manager.py"
+        "agents/context_aware_agent.py"
+        "models/execution_context.py"
+        "tools/lineage_validator.py"
+        "utils/config_manager.py"
         "config/config.yaml"
         "examples/basic_usage.py"
         "tests/test_context_aware_agent.py"
@@ -92,7 +92,7 @@ check_required_files() {
 check_python_syntax() {
     print_step "检查Python语法..."
     
-    python_files=$(find enhanced_lineage_agent examples tests scripts -name "*.py" 2>/dev/null || true)
+    python_files=$(find agents models tools utils integrations deployment monitoring examples tests scripts -name "*.py" 2>/dev/null || true)
     
     if [[ -n "$python_files" ]]; then
         for file in $python_files; do
@@ -118,9 +118,9 @@ import os
 sys.path.insert(0, '.')
 
 try:
-    from enhanced_lineage_agent.models.execution_context import ExecutionContext, EnvironmentType
-    from enhanced_lineage_agent.models.job_mapping import JobExecutionMapping, ValidationStatus
-    from enhanced_lineage_agent.utils.config_manager import ConfigManager
+    from models.execution_context import ExecutionContext, EnvironmentType
+    from models.job_mapping import JobExecutionMapping, ValidationStatus
+    from utils.config_manager import ConfigManager
     print('✓ 所有核心模块导入成功')
 except ImportError as e:
     print(f'✗ 导入错误: {e}')
@@ -208,7 +208,7 @@ generate_deployment_report() {
 ## 部署文件统计
 
 ### 核心代码文件
-$(find enhanced_lineage_agent -name "*.py" | wc -l) 个Python文件
+$(find agents models tools utils integrations deployment monitoring -name "*.py" | wc -l) 个Python文件
 
 ### 配置文件
 $(find config -name "*.yaml" -o -name "*.yml" | wc -l) 个配置文件

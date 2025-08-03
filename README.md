@@ -88,8 +88,8 @@
 
 1. **克隆仓库**：
    ```bash
-   git clone <repository-url>
-   cd enhanced-glue-lineage-extractor
+   git clone https://github.com/Honeyfish20/e2e-datalineage-with-amazon-strands-agents.git
+   cd e2e-datalineage-with-amazon-strands-agents
    ```
 
 2. **运行设置脚本**：
@@ -118,8 +118,8 @@
 ### 基础使用
 
 ```python
-from enhanced_lineage_agent.agents.context_aware_agent import ContextAwareAgent
-from enhanced_lineage_agent.utils.config_manager import ConfigManager
+from agents.context_aware_agent import ContextAwareAgent
+from utils.config_manager import ConfigManager
 
 # 初始化代理
 config = ConfigManager()
@@ -148,7 +148,7 @@ if result['success']:
 
 ```python
 # 在SageMaker Notebook中
-from enhanced_lineage_agent.agents.context_aware_agent import ContextAwareAgent
+from agents.context_aware_agent import ContextAwareAgent
 
 # 代理自动检测SageMaker环境
 agent = ContextAwareAgent()
@@ -218,7 +218,7 @@ python -m pytest tests/ -v
 python -m pytest tests/test_context_aware_agent.py -v
 
 # 运行覆盖率测试
-python -m pytest tests/ --cov=enhanced_lineage_agent --cov-report=html
+python -m pytest tests/ --cov=. --cov-report=html
 ```
 
 ## 开发
@@ -226,7 +226,7 @@ python -m pytest tests/ --cov=enhanced_lineage_agent --cov-report=html
 ### 项目结构
 
 ```
-enhanced_lineage_agent/
+e2e-datalineage-with-amazon-strands-agents/
 ├── agents/                 # 代理实现
 │   └── context_aware_agent.py
 ├── models/                 # 数据模型
@@ -238,19 +238,26 @@ enhanced_lineage_agent/
 │   ├── lineage_validator.py
 │   ├── lineage_merger.py
 │   └── context_extractor.py
-└── utils/                  # 实用函数
-    ├── config_manager.py
-    └── monitoring.py
+├── utils/                  # 实用函数
+│   ├── config_manager.py
+│   └── monitoring.py
+├── config/                 # 配置文件
+│   └── config.yaml
+├── examples/               # 使用示例
+│   ├── basic_usage.py
+│   └── sagemaker_notebook_example.py
+└── tests/                  # 测试文件
+    └── test_context_aware_agent.py
 ```
 
 ### 开发脚本
 
 ```bash
 # 设置开发环境
-./scripts/setup_dev.sh
+python scripts/setup_project.py
 
 # 运行测试
-./scripts/run_tests.sh
+python -m pytest tests/ -v
 ```
 
 ## API参考

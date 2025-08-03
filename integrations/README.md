@@ -35,11 +35,11 @@
 
 ```python
 # 1. 验证集成
-from enhanced_lineage_agent.integrations.compatibility_wrapper import CompatibilityWrapper
+from integrations.compatibility_wrapper import CompatibilityWrapper
 CompatibilityWrapper.verify_integration()
 
 # 2. 使用增强的Glue提取器
-from enhanced_lineage_agent.integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
+from integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
 import boto3
 
 session = boto3.Session()
@@ -50,7 +50,7 @@ extractor = EnhancedGlueLineageExtractor(
 )
 
 # 3. 使用增强的表合并器
-from enhanced_lineage_agent.integrations.enhanced_table_merger import EnhancedTableLineageMerger
+from integrations.enhanced_table_merger import EnhancedTableLineageMerger
 
 merger = EnhancedTableLineageMerger(
     output_dir="/path/to/output",
@@ -62,7 +62,7 @@ merger = EnhancedTableLineageMerger(
 
 ```bash
 # 创建迁移脚本
-python -m enhanced_lineage_agent.integrations.compatibility_wrapper --create-migration
+python -m integrations.compatibility_wrapper --create-migration
 
 # 运行迁移
 python migrate_lineage_scripts.py --script-dir script
@@ -174,7 +174,7 @@ grep "context" /var/log/lineage_agent.log
 ## 文件结构
 
 ```
-enhanced_lineage_agent/integrations/
+integrations/
 ├── README.md                          # 本文件
 ├── enhanced_glue_extractor.py          # 增强的Glue提取器
 ├── enhanced_table_merger.py            # 增强的表合并器
