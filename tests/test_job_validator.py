@@ -15,9 +15,9 @@ import sys
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
-from enhanced_lineage_agent.tools.job_validator import JobIDValidator
-from enhanced_lineage_agent.models.execution_context import ExecutionContext, EnvironmentType
-from enhanced_lineage_agent.models.job_mapping import ValidationStatus
+from tools.job_validator import JobIDValidator
+from models.execution_context import ExecutionContext, EnvironmentType
+from models.job_mapping import ValidationStatus
 
 
 class TestJobIDValidator(unittest.TestCase):
@@ -253,7 +253,7 @@ class TestJobValidatorIntegration(unittest.TestCase):
     @patch('enhanced_lineage_agent.tools.job_validator.get_config')
     def test_strands_tool_integration(self, mock_get_config):
         """测试Strands工具集成"""
-        from enhanced_lineage_agent.tools.job_validator import validate_job_run_id
+        from tools.job_validator import validate_job_run_id
         
         # 模拟配置
         mock_config = MagicMock()

@@ -1,0 +1,30 @@
+# Enhanced Lineage Agent Dependencies
+
+# Core Strands Agents
+strands-agents>=0.1.0
+
+# AWS SDK
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Utilities
+python-dateutil>=2.8.0
+psutil>=5.9.0
+pydantic>=2.0.0
+
+# Development dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# Optional dependencies for enhanced functionality
+# Uncomment if needed
+# jupyter>=1.0.0
+# ipython>=8.0.0

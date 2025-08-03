@@ -14,9 +14,9 @@ from datetime import datetime, timezone
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
-from enhanced_lineage_agent.integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
-from enhanced_lineage_agent.integrations.enhanced_table_merger import EnhancedTableLineageMerger
-from enhanced_lineage_agent.models.execution_context import ExecutionContext, EnvironmentType
+from integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
+from integrations.enhanced_table_merger import EnhancedTableLineageMerger
+from models.execution_context import ExecutionContext, EnvironmentType
 
 
 class TestLineageIntegrationEndToEnd(unittest.TestCase):
@@ -214,7 +214,7 @@ class TestLineageIntegrationEndToEnd(unittest.TestCase):
     
     def test_error_handling_integration(self):
         """测试错误处理集成"""
-        from enhanced_lineage_agent.utils.error_recovery import ErrorRecoveryManager, ErrorType
+        from utils.error_recovery import ErrorRecoveryManager, ErrorType
         
         recovery_manager = ErrorRecoveryManager()
         
@@ -233,7 +233,7 @@ class TestLineageIntegrationEndToEnd(unittest.TestCase):
     
     def test_monitoring_integration(self):
         """测试监控集成"""
-        from enhanced_lineage_agent.monitoring.simple_monitoring import SimpleMonitoring
+        from monitoring.simple_monitoring import SimpleMonitoring
         
         monitoring = SimpleMonitoring()
         
@@ -262,7 +262,7 @@ class TestConcurrentExecution(unittest.TestCase):
         import threading
         import time
         
-        from enhanced_lineage_agent.tools.context_extractor import ExecutionContextExtractor
+        from tools.context_extractor import ExecutionContextExtractor
         
         results = []
         errors = []
@@ -298,8 +298,8 @@ class TestConcurrentExecution(unittest.TestCase):
     
     def test_job_id_conflict_handling(self):
         """测试Job ID冲突处理"""
-        from enhanced_lineage_agent.tools.job_validator import JobIDValidator
-        from enhanced_lineage_agent.models.execution_context import ExecutionContext, EnvironmentType
+        from tools.job_validator import JobIDValidator
+        from models.execution_context import ExecutionContext, EnvironmentType
         
         # 创建两个不同的执行上下文
         context1 = ExecutionContext(
@@ -332,7 +332,7 @@ class TestPerformance(unittest.TestCase):
     def test_context_extraction_performance(self):
         """测试上下文提取性能"""
         import time
-        from enhanced_lineage_agent.tools.context_extractor import ExecutionContextExtractor
+        from tools.context_extractor import ExecutionContextExtractor
         
         extractor = ExecutionContextExtractor()
         

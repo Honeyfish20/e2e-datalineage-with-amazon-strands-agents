@@ -1,0 +1,222 @@
+# Enhanced Lineage Agent 配置文件
+
+# AWS配置
+aws:
+  region: us-east-1
+  profile: default
+  
+  # Glue配置
+  glue:
+    max_concurrent_jobs: 10
+    job_timeout_minutes: 60
+    log_retention_days: 30
+  
+  # Redshift配置
+  redshift:
+    cluster_identifier: data-warehouse-cluster
+    database: analytics
+    query_timeout_seconds: 300
+  
+  # SageMaker配置
+  sagemaker:
+    default_instance_type: ml.t3.medium
+    execution_role_arn: arn:aws:iam::123456789012:role/SageMakerExecutionRole
+  
+  # DynamoDB配置
+  dynamodb:
+    table_prefix: enhanced-lineage
+    read_capacity: 5
+    write_capacity: 5
+  
+  # S3配置
+  s3:
+    lineage_bucket: enhanced-lineage-data
+    backup_bucket: enhanced-lineage-backup
+    retention_days: 365
+
+# 代理配置
+agent:
+  # Bedrock模型配置
+  model:
+    model_id: anthropic.claude-3-5-sonnet-20241022-v2:0
+    max_tokens: 4000
+    temperature: 0.1
+    top_p: 0.9
+  
+  # 上下文识别配置
+  context:
+    timeout_seconds: 30
+    cache_ttl_minutes: 60
+    max_context_age_hours: 24
+  
+  # Job ID验证配置
+  job_validation:
+    time_tolerance_seconds: 300  # 5分钟
+    min_confidence_threshold: 0.7
+    max_validation_attempts: 3
+  
+  # 血缘合并配置
+  lineage_merge:
+    max_merge_time_seconds: 120
+    conflict_resolution_strategy: intelligent
+    validation_required: true
+
+# 监控配置
+monitoring:
+  # 日志配置
+  logging:
+    level: INFO
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file_path: logs/enhanced_lineage_agent.log
+    max_file_size_mb: 100
+    backup_count: 5
+  
+  # 指标配置
+  metrics:
+    enabled: true
+    collection_interval_seconds: 60
+    retention_days: 30
+    
+    # CloudWatch配置
+    cloudwatch:
+      namespace: EnhancedLineageAgent
+      enabled: true
+    
+    # 自定义指标
+    custom_metrics:
+      - context_identification_success_rate
+      - job_validation_confidence_score
+      - lineage_merge_success_rate
+      - cross_service_correlation_rate
+  
+  # 告警配置
+  alerts:
+    enabled: true
+    sns_topic_arn: arn:aws:sns:us-east-1:123456789012:lineage-alerts
+    
+    # 告警规则
+    rules:
+      - name: context_identification_failure
+        metric: context_identification_success_rate
+        threshold: 0.9
+        comparison: less_than
+        evaluation_periods: 2
+        
+      - name: job_validation_low_confidence
+        metric: job_validation_confidence_score
+        threshold: 0.7
+        comparison: less_than
+        evaluation_periods: 3
+        
+      - name: lineage_merge_failure
+        metric: lineage_merge_success_rate
+        threshold: 0.95
+        comparison: less_than
+        evaluation_periods: 2
+
+# 安全配置
+security:
+  # 加密配置
+  encryption:
+    kms_key_id: arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012
+    encrypt_at_rest: true
+    encrypt_in_transit: true
+  
+  # 访问控制
+  access_control:
+    enable_rbac: true
+    default_role: lineage_user
+    admin_role: lineage_admin
+  
+  # 审计配置
+  audit:
+    enabled: true
+    log_all_operations: true
+    retention_days: 2555  # 7年
+
+# 性能配置
+performance:
+  # 缓存配置
+  cache:
+    enabled: true
+    ttl_minutes: 30
+    max_size_mb: 512
+    
+    # Redis配置（可选）
+    redis:
+      enabled: false
+      host: localhost
+      port: 6379
+      db: 0
+  
+  # 并发配置
+  concurrency:
+    max_workers: 10
+    max_concurrent_extractions: 5
+    queue_size: 100
+  
+  # 超时配置
+  timeouts:
+    context_extraction: 30
+    job_validation: 60
+    lineage_merge: 120
+    api_request: 30
+
+# 开发配置
+development:
+  # 调试配置
+  debug:
+    enabled: false
+    verbose_logging: false
+    save_intermediate_results: false
+  
+  # 测试配置
+  testing:
+    mock_aws_services: false
+    use_test_data: false
+    test_data_path: tests/data
+  
+  # 实验性功能
+  experimental:
+    enable_advanced_correlation: false
+    enable_ml_predictions: false
+    enable_auto_optimization: false
+
+# 环境特定配置
+environments:
+  development:
+    aws:
+      region: us-east-1
+    monitoring:
+      logging:
+        level: DEBUG
+    performance:
+      cache:
+        ttl_minutes: 5
+    development:
+      debug:
+        enabled: true
+        verbose_logging: true
+  
+  staging:
+    aws:
+      region: us-east-1
+    monitoring:
+      logging:
+        level: INFO
+    performance:
+      cache:
+        ttl_minutes: 15
+  
+  production:
+    aws:
+      region: us-east-1
+    monitoring:
+      logging:
+        level: WARNING
+    performance:
+      cache:
+        ttl_minutes: 60
+    security:
+      audit:
+        log_all_operations: true

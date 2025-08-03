@@ -12,8 +12,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from enhanced_lineage_agent.integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
-from enhanced_lineage_agent.integrations.enhanced_table_merger import EnhancedTableLineageMerger
+from integrations.enhanced_glue_extractor import EnhancedGlueLineageExtractor
+from integrations.enhanced_table_merger import EnhancedTableLineageMerger
 
 
 class CompatibilityWrapper:
@@ -122,7 +122,7 @@ class CompatibilityWrapper:
         import_patch = '''
 # Enhanced lineage extractor integration
 try:
-    from enhanced_lineage_agent.integrations.compatibility_wrapper import CompatibilityWrapper
+    from integrations.compatibility_wrapper import CompatibilityWrapper
     ENHANCED_MODE_AVAILABLE = True
 except ImportError:
     ENHANCED_MODE_AVAILABLE = False
@@ -165,7 +165,7 @@ except ImportError:
         import_patch = '''
 # Enhanced table merger integration
 try:
-    from enhanced_lineage_agent.integrations.compatibility_wrapper import CompatibilityWrapper
+    from integrations.compatibility_wrapper import CompatibilityWrapper
     ENHANCED_MODE_AVAILABLE = True
 except ImportError:
     ENHANCED_MODE_AVAILABLE = False
@@ -212,7 +212,7 @@ except ImportError:
 import os
 import sys
 import argparse
-from enhanced_lineage_agent.integrations.compatibility_wrapper import CompatibilityWrapper
+from integrations.compatibility_wrapper import CompatibilityWrapper
 
 def main():
     parser = argparse.ArgumentParser(description="Migrate existing lineage scripts to enhanced version")

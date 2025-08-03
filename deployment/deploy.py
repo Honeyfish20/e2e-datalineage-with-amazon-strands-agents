@@ -16,8 +16,8 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
-from enhanced_lineage_agent.config import get_config
-from enhanced_lineage_agent.utils.logging_config import get_logger
+from config import get_config
+from utils.logging_config import get_logger
 
 logger = get_logger('deployment')
 
@@ -172,8 +172,8 @@ import os
 sys.path.insert(0, '/opt/python')
 sys.path.insert(0, os.path.dirname(__file__))
 
-from enhanced_lineage_agent.agents.context_aware_agent import ContextAwareAgent
-from enhanced_lineage_agent.utils.logging_config import get_logger
+from agents.context_aware_agent import ContextAwareAgent
+from utils.logging_config import get_logger
 
 logger = get_logger('lambda_handler')
 
@@ -225,7 +225,7 @@ def lambda_handler(event, context):
 def perform_monitoring_check():
     """执行监控检查"""
     try:
-        from enhanced_lineage_agent.monitoring.simple_monitoring import SimpleMonitoring
+        from monitoring.simple_monitoring import SimpleMonitoring
         
         monitoring = SimpleMonitoring()
         

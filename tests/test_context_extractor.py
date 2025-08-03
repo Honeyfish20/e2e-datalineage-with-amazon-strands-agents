@@ -12,8 +12,8 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, project_root)
 
-from enhanced_lineage_agent.tools.context_extractor import ExecutionContextExtractor
-from enhanced_lineage_agent.models.execution_context import EnvironmentType
+from tools.context_extractor import ExecutionContextExtractor
+from models.execution_context import EnvironmentType
 
 
 class TestExecutionContextExtractor(unittest.TestCase):
@@ -95,7 +95,7 @@ class TestExecutionContextExtractor(unittest.TestCase):
     @patch('enhanced_lineage_agent.tools.context_extractor.ExecutionContextExtractor.extract_context')
     def test_extract_execution_context_tool(self, mock_extract):
         """测试Strands工具函数"""
-        from enhanced_lineage_agent.tools.context_extractor import extract_execution_context
+        from tools.context_extractor import extract_execution_context
         
         # 设置模拟返回值
         mock_context = MagicMock()
@@ -149,7 +149,7 @@ class TestContextExtractionIntegration(unittest.TestCase):
         self.assertIn('environment_type', context_dict)
         
         # 从字典重建
-        from enhanced_lineage_agent.models.execution_context import ExecutionContext
+        from models.execution_context import ExecutionContext
         rebuilt_context = ExecutionContext.from_dict(context_dict)
         
         self.assertEqual(context.context_id, rebuilt_context.context_id)
